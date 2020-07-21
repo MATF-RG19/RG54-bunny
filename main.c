@@ -17,7 +17,7 @@ int main(int argc,char **argv){
     //Kreira se prozor
     glutInitWindowSize(1000,800);
     glutInitWindowPosition(100,100);
-    glutCreateWindow(argv[0]);
+    glutCreateWindow("Bunny");
     
     //Registruju se callback funkcije 
     glutDisplayFunc(on_display);
