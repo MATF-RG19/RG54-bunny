@@ -11,7 +11,7 @@ int main(int argc,char **argv){
     //Inicijalizuje se GLUT
     
     glutInit(&argc,argv);
-    glutInitDisplayMOde(GLUT_RGB | GLUT_DOUBLE);
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
     
     
     //Kreira se prozor
