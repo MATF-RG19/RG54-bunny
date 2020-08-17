@@ -1,6 +1,10 @@
 # :rabbit2: RG54-bunny
  Bunny
 ___
+## :books: Potrebne biblioteke
+
+-GLUT
+___
 
 ### :memo: Opis:
 
