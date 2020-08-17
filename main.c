@@ -1,12 +1,28 @@
 #include <GL/glut.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include "image.h"
+
+
+/*Imena fajlova sa teksturama*/
+
+#define GRASS "gras.bmp"
+
+/*Identifikatori tekstura*/
+static GLuint names[1];
+
+
+
+
 
 //Dimenzije prozora
 static int window_w, window_h;
 
-
-
+//fjA ZA inicijalizaciju u openglu
+static void initialize_lights(void);
+static void initialize(void);
+static void initialize_material(int boja);
 //Deklaracije callback funkcija
 static void on_display(void);
 static void on_reshape(int w,int h);
@@ -34,26 +50,79 @@ int main(int argc,char **argv){
     glutKeyboardFunc(on_keyboard);
 
     //Obavlja se OpenGL inicijalizacija
-    glClearColor(0.8,0.8,0.8,0);
+    
+    glClearColor(0,0.8,1,0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_NORMALIZE);
     glEnable(GL_COLOR_MATERIAL);
     glLineWidth(2);
 
+    
+    initialize();        
     //Program ulazi u glavnu petlju    
     glutMainLoop();
     
     return 0;
 }
 
+static void initialize(void)
+{
+    /* Objekat koji predstavlja teskturu ucitanu iz fajla. */
+    Image * image;
+
+    /* Ukljucuju se teksture. */
+    glEnable(GL_TEXTURE_2D);
+
+    glTexEnvf(GL_TEXTURE_ENV,
+              GL_TEXTURE_ENV_MODE,
+              GL_REPLACE);
+
+    /*
+     * Inicijalizuje se objekat koji ce sadrzati teksture ucitane iz
+     * fajla.
+     */
+    image = image_init(0, 0);
+
+    
+    /* Generisu se identifikatori tekstura. */
+    glGenTextures(1, names);
+
+    /* Kreira se  tekstura. */
+    image_read(image, GRASS);
+
+    glBindTexture(GL_TEXTURE_2D, names[0]);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 image->width, image->height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+
+    /* Iskljucujemo aktivnu teksturu */
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    /* Unistava se objekat za citanje tekstura iz fajla. */
+    image_done(image);
+
+  
+}
+
 static void on_keyboard(unsigned char key, int x, int y)
 {
     switch (key) {
-        case 27:
-        /* Zavrsava se program na komandu esc */
-            exit(0);
-            break; 
+       case 'B':
+       case 'b':
+        
+        break;
+
+       case 27:
+       /* Zavrsava se program na komandu esc */
+        exit(0);
+        break; 
     }
 }
 
@@ -65,12 +134,18 @@ static void on_reshape(int w,int h)
     //pamti se sirina i visina prozora
     window_w = w;
     window_h = h;
+    /* Podesavanje projekcije*/
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    //prvi argument naredne fje-odredjuje ugao vidnog polja u stepenima u smeru y
+    //drugi-odnos koji odredjuje vidno polje,treci i cetvrti odredjuju rastojanje izmedju view i clipping plane 
+    gluPerspective(130,window_w/(float)window_h,1,6);
 
 }
 
 
-void draw_bunny(){
-   //Podesavanje boje i svetla
+static void initialize_lights(){
+ //Podesavanje boje i svetla
      /* Pozicija svetla (u pitanju je direkcionalno svetlo). */
     GLfloat light_position[] = { 1, 1, 0, 0 };
 
@@ -83,6 +158,18 @@ void draw_bunny(){
     /* Spekularna boja svetla. */
     GLfloat light_specular[] = { 0.8, 0.8, 0.9, 1 };
 
+    /* Ukljucuje se osvjetljenje i podesavaju parametri svetla. */
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+}
+
+static void initialize_material(int boja){
+    switch(boja){
+		case 1:{
     /* Koeficijenti ambijentalne refleksije materijala. */
     GLfloat ambient_coeffs[] = { 1, 1, 1, 1 };
 
@@ -95,24 +182,42 @@ void draw_bunny(){
     /* Koeficijent glatkosti materijala. */
     GLfloat shininess = 100;
 
-    /* Ukljucuje se osvjetljenje i podesavaju parametri svetla. */
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-    glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-
     /* Podesavaju se parametri materijala. */
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   ambient_coeffs);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs);
     glMaterialf(GL_FRONT_AND_BACK,  GL_SHININESS, shininess);
+		}
+		case 2:{
+    GLfloat ambient_coeffs1[] = { 1, 0.5, 0,0 };
+    GLfloat diffuse_coeffs1[] = { 1, 0.5, 0, 0 };
+    GLfloat specular_coeffs1[] = { 1, 0.5, 0, 0 };
 
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   ambient_coeffs1);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs1);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs1);    
+		}
+		case 3:{
+		
+    GLfloat ambient_coeffs2[] = { 0, 0.8, 0,0 };
+    GLfloat diffuse_coeffs2[] = { 0, 0.8, 0, 0 };
+    GLfloat specular_coeffs2[] = { 0, 0.8, 0, 0 };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   ambient_coeffs2);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs2);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs2);
+		}
+    case 4:{
+	
+  
+		}
+	}
+  
+}
 
+void draw_bunny(){
     glPushMatrix();
     glScalef(1, 1, 1);
-
+    initialize_material(1);
     //crtamo telo(sfera)
     glTranslatef(-7,-1,1); 
     glColor3f(1, 1, 1);
@@ -127,14 +232,14 @@ void draw_bunny(){
     glTranslatef(4,-1,-1);
     
 
-	GLUquadricObj *obj = gluNewQuadric();
+	  GLUquadricObj *obj = gluNewQuadric();
     GLUquadricObj *obj2 = gluNewQuadric();
-	//prvo uvo
-	glPushMatrix();
-	glTranslatef(-8,-1,0);
-	glRotatef(90,-8,-1,0);
-	gluCylinder(obj,0.25,0.25,3.5,3,3);
-	glPopMatrix();
+	  //prvo uvo
+	  glPushMatrix();
+	  glTranslatef(-8,-1,0);
+	  glRotatef(90,-8,-1,0);
+	  gluCylinder(obj,0.25,0.25,3.5,3,3);
+	  glPopMatrix();
     
     //drugo uvo 
     glPushMatrix();
@@ -170,37 +275,20 @@ void draw_bunny(){
     glutSolidSphere(0.5,20,20);
    
     glTranslatef(9,3,-1);
-
-
-
     //rep 
     glTranslatef(-8,0,2);
     glRotatef(360,-8,0,2); 
     glColor3f(1, 1, 1);
     glutSolidSphere(0.25,20,20);
     glRotatef(-360,8,0,-2); 
-    glTranslatef(8,0,-2);
-    
+    glTranslatef(8,0,-2);    
 }
 
 
 void draw_carrots(){
 
     glPushMatrix();  
-    /* Koeficijenti ambijentalne refleksije materijala. */
-    GLfloat ambient_coeffs1[] = { 1, 0.5, 0,0 };
-
-    /* Koeficijenti difuzne refleksije materijala. */
-    GLfloat diffuse_coeffs1[] = { 1, 0.5, 0, 0 };
-
-    /* Koeficijenti spekularne refleksije materijala. */
-    GLfloat specular_coeffs1[] = { 1, 0.5, 0, 0 };
-
-    /* Podesavaju se parametri materijala. */
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   ambient_coeffs1);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs1);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs1);
-    
+    initialize_material(2);
     
      /*sargarepa*/
     glTranslatef(1, 0, -2);
@@ -210,21 +298,7 @@ void draw_carrots(){
 
     /*nastavak sargarepe*/
       
-    /* Koeficijenti ambijentalne refleksije materijala. */
-    GLfloat ambient_coeffs2[] = { 0, 0.8, 0,0 };
-
-    /* Koeficijenti difuzne refleksije materijala. */
-    GLfloat diffuse_coeffs2[] = { 0, 0.8, 0, 0 };
-
-    /* Koeficijenti spekularne refleksije materijala. */
-    GLfloat specular_coeffs2[] = { 0, 0.8, 0, 0 };
-
-
-    /* Podesavaju se parametri materijala. */
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   ambient_coeffs2);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs2);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs2);
-  
+    initialize_material(3);
     glTranslatef(1, 0, -3);
     glColor3f(0, 1, 0);
     glutSolidCone(0.15,2.75,9,9);      
@@ -233,10 +307,7 @@ void draw_carrots(){
      
 
     /*druga sargarepa*/
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   ambient_coeffs1);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs1);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs1);
-      
+    initialize_material(2);
     glTranslatef(1,0,0);
     glPushMatrix();  
     /*sargarepa*/
@@ -247,10 +318,7 @@ void draw_carrots(){
 
     /*nastavak sargarepe*/
 
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   ambient_coeffs2);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs2);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs2);
-    
+    initialize_material(3);
 
     glTranslatef(1, 0, -3);    
     glColor3f(0, 1, 0);
@@ -262,10 +330,7 @@ void draw_carrots(){
     glTranslatef(-1,0,0);
       
     //treca sargarepa
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   ambient_coeffs1);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs1);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs1);
-   
+    initialize_material(2);
 
     glTranslatef(-1,0,1);
     glPushMatrix();  
@@ -276,10 +341,7 @@ void draw_carrots(){
     glTranslatef(-1, 0,2);
 
     /*nastavak sargarepe*/
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT,   ambient_coeffs2);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs2);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs2);
-  
+    initialize_material(3);
     glTranslatef(1, 0, -3);
     glColor3f(0, 1, 0);
     glutSolidCone(0.15,2.75,9,9);
@@ -290,11 +352,6 @@ void draw_carrots(){
 }
 
 
-
-
-
-
-
 static void on_display(void)
 {
     //Brise se prethodni sadrzaj 'prozora'
@@ -303,12 +360,7 @@ static void on_display(void)
     //Podesavnje viewporta
     glViewport(0,0,window_w,window_h);
 
-    /* Podesavanje projekcije*/
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    //prvi argument naredne fje-odredjuje ugao vidnog polja u stepenima u smeru y
-    //drugi-odnos koji odredjuje vidno polje,treci i cetvrti odredjuju rastojanje izmedju view i clipping plane 
-    gluPerspective(130,window_w/(float)window_h,1,6);
+    
 
     //Podesavanje vidne tacke
     glMatrixMode(GL_MODELVIEW);
@@ -316,10 +368,36 @@ static void on_display(void)
     //1,2,3 -pozicija tacke od koje gledamo 0,0,0-polozaj referentne tacke i 0,1,0-pravac vektora
     gluLookAt(1,2,3,0,0,0,0,1,0);
 
+    initialize_lights();
+    
     draw_bunny();
     draw_carrots();
 
 
+    /* Primjenjuje se translacija koja pomera scenu*/
+    glTranslatef(-0.5,-3.3,0);
+    
+      /* Crta se trava. */
+    glBindTexture(GL_TEXTURE_2D, names[0]);
+    glBegin(GL_QUADS);
+    glNormal3f(0, 12, 0);
+    glTexCoord2f(0, 0);
+    glVertex3f(-12, 0, -12);
+
+    glTexCoord2f(0, 12);
+    glVertex3f(12, 0, -12);
+
+    glTexCoord2f(12, 12);
+    glVertex3f(12, 0, 12);
+
+    glTexCoord2f(12, 0);
+    glVertex3f(-12, 0, 12);
+    glEnd();
+    
+    /* Iskljucujemo aktivnu teksturu */
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glTranslatef(0.5,3.5,0);
+ 
     //Nova slika se salje na ekran 
     glutSwapBuffers();
     
