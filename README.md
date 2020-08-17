@@ -1,5 +1,5 @@
-# RG54-bunny
-Bunny
+# :rabbit2: RG54-bunny
+ Bunny
 ___
 
 ### :memo: Opis:
