@@ -1,6 +1,5 @@
 # RG54-bunny
 Bunny
-# :gem: Diamond cliff
 ___
 
 ### :memo: Opis:
