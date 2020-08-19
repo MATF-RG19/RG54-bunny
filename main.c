@@ -13,8 +13,12 @@
 static GLuint names[1];
 
 
+/* Vreme proteklo od pocetka simulacije*/
+static float hours; 
 
-
+/*fleg koji odredjuje stanje tajmera*/
+static int timer_active;
+//static int timer_active2;
 
 //Dimenzije prozora
 static int window_w, window_h;
@@ -27,7 +31,7 @@ static void initialize_material(int boja);
 static void on_display(void);
 static void on_reshape(int w,int h);
 static void on_keyboard(unsigned char key, int x, int y);
-
+static void on_timer(int value);
 
 
 
@@ -56,9 +60,12 @@ int main(int argc,char **argv){
     glEnable(GL_LIGHTING);
     glEnable(GL_NORMALIZE);
     glEnable(GL_COLOR_MATERIAL);
+    
     glLineWidth(2);
 
-    
+    hours = 0;
+    timer_active = 0;
+   
     initialize();        
     //Program ulazi u glavnu petlju    
     glutMainLoop();
@@ -107,26 +114,64 @@ static void initialize(void)
 
     /* Unistava se objekat za citanje tekstura iz fajla. */
     image_done(image);
-
-  
+ 
 }
 
 static void on_keyboard(unsigned char key, int x, int y)
 {
     switch (key) {
-       case 'B':
-       case 'b':
-        
-        break;
-
        case 27:
        /* Zavrsava se program na komandu esc */
         exit(0);
-        break; 
+        break;
+
+        case 'b':
+        case 'B':
+          /*pokrece se simulacija*/ 
+            if(!timer_active){
+              glutTimerFunc(50,on_timer, 0);
+              timer_active = 1;              
+            }
+            
+            break;
+
+        case 'r':
+        case 'R':
+        /* Restartuje se se simulacija. */
+            hours = 0;
+            glutPostRedisplay();           
+            break;
+        case 'z':
+        case 'Z':
+        /* Zaustavlja se simulacija. */
+            timer_active = 0;                       
+            break;
+        /*Ukljucuje se ravno sencenje i ponovo se iscratava scena*/    
+        case 'P':
+        case 'p':
+        glShadeModel(GL_FLAT);
+        glutPostRedisplay();
+        break;
+
     }
 }
 
+static void on_timer(int value)
+{
+    /* Proverava se da li callback dolazi od odgovarajuceg tajmera. */
+    if (value != 0)
+        return;
 
+    /* Azurira se vreme simulacije. */
+    hours +=10;
+
+    /* Forsira se ponovno iscrtavanje prozora. */
+    glutPostRedisplay();
+
+    /* Po potrebi se ponovo postavlja tajmer. */
+    if (timer_active)
+        glutTimerFunc(50, on_timer, 0);
+}
 
 
 static void on_reshape(int w,int h)
@@ -206,10 +251,7 @@ static void initialize_material(int boja){
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE,   diffuse_coeffs2);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,  specular_coeffs2);
 		}
-    case 4:{
-	
   
-		}
 	}
   
 }
@@ -217,7 +259,10 @@ static void initialize_material(int boja){
 void draw_bunny(){
     glPushMatrix();
     glScalef(1, 1, 1);
+    
+   
     initialize_material(1);
+    
     //crtamo telo(sfera)
     glTranslatef(-7,-1,1); 
     glColor3f(1, 1, 1);
@@ -232,14 +277,14 @@ void draw_bunny(){
     glTranslatef(4,-1,-1);
     
 
-	  GLUquadricObj *obj = gluNewQuadric();
+	GLUquadricObj *obj = gluNewQuadric();
     GLUquadricObj *obj2 = gluNewQuadric();
-	  //prvo uvo
-	  glPushMatrix();
-	  glTranslatef(-8,-1,0);
-	  glRotatef(90,-8,-1,0);
-	  gluCylinder(obj,0.25,0.25,3.5,3,3);
-	  glPopMatrix();
+	//prvo uvo
+	glPushMatrix();
+	glTranslatef(-8,-1,0);
+	glRotatef(90,-8,-1,0);
+	gluCylinder(obj,0.25,0.25,3.5,3,3);
+	glPopMatrix();
     
     //drugo uvo 
     glPushMatrix();
@@ -283,6 +328,7 @@ void draw_bunny(){
     glRotatef(-360,8,0,-2); 
     glTranslatef(8,0,-2);    
 }
+
 
 
 void draw_carrots(){
@@ -353,7 +399,7 @@ void draw_carrots(){
 
 
 static void on_display(void)
-{
+{   float h_rotation;
     //Brise se prethodni sadrzaj 'prozora'
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);   
     
@@ -370,9 +416,29 @@ static void on_display(void)
 
     initialize_lights();
     
-    draw_bunny();
-    draw_carrots();
+    h_rotation = 12*hours / 10;
+  
+    /*scena se ljulja i zeka skakuce gube mu se usi noge*/
+    glPushMatrix();
+     glTranslatef(
+            sin(hours / 50.0f),
+            0,
+            0
+        );
+    glRotatef(
+            /* ugao */
+            sin(hours / 50.0f) * 30.0f,
+            /* vektor rotacije */
+            0, 0, 1
+        );
 
+    draw_bunny();
+    glPopMatrix();
+    /*sargarepice se rotiraju oko z ose*/
+    glPushMatrix();
+        glRotatef(h_rotation, 0, 0, 1);     
+        draw_carrots();
+    glPopMatrix();
 
     /* Primjenjuje se translacija koja pomera scenu*/
     glTranslatef(-0.5,-3.3,0);
